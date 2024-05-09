@@ -10,3 +10,10 @@ c:\GoogleDisk\SyncFiles\Projekty\dotNET\DateCreateRepair\DateCreateRepair\bin\De
 c:\GoogleDisk\SyncFiles\Projekty\dotNET\DateCreateRepair\DateCreateRepair\obj\Debug\DateCreateRepair.csprojAssemblyReference.cache
 c:\GoogleDisk\SyncFiles\Projekty\dotNET\DateCreateRepair\DateCreateRepair\obj\Debug\DateCreateRepair.exe
 c:\GoogleDisk\SyncFiles\Projekty\dotNET\DateCreateRepair\DateCreateRepair\obj\Debug\DateCreateRepair.pdb
+C:\Users\ferbar\Source\Repos\pepaferbar\ImageDateCreateRepair\DateCreateRepair\bin\Debug\DateCreateRepair.exe.config
+C:\Users\ferbar\Source\Repos\pepaferbar\ImageDateCreateRepair\DateCreateRepair\bin\Debug\DateCreateRepair.exe
+C:\Users\ferbar\Source\Repos\pepaferbar\ImageDateCreateRepair\DateCreateRepair\bin\Debug\DateCreateRepair.pdb
+C:\Users\ferbar\Source\Repos\pepaferbar\ImageDateCreateRepair\DateCreateRepair\obj\Debug\DateCreateRepair.csproj.AssemblyReference.cache
+C:\Users\ferbar\Source\Repos\pepaferbar\ImageDateCreateRepair\DateCreateRepair\obj\Debug\DateCreateRepair.csproj.CoreCompileInputs.cache
+C:\Users\ferbar\Source\Repos\pepaferbar\ImageDateCreateRepair\DateCreateRepair\obj\Debug\DateCreateRepair.exe
+C:\Users\ferbar\Source\Repos\pepaferbar\ImageDateCreateRepair\DateCreateRepair\obj\Debug\DateCreateRepair.pdb
