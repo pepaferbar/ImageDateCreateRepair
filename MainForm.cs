@@ -11,9 +11,6 @@ namespace DateCreateRepair2
     public MainForm()
     {
       InitializeComponent();
-
-      // Propojení logování v RichTextBoxu (pokud byste ho použili)
-      // Ale pro TextBox musíme logiku napsat ručně.
     }
 
     private void btnBrowse_Click(object sender, EventArgs e)
@@ -24,7 +21,6 @@ namespace DateCreateRepair2
       }
     }
 
-    // Klíčová metoda - spouští zpracování asynchronně
     private async void btnStart_Click(object sender, EventArgs e)
     {
       string path = txtPath.Text;
@@ -34,24 +30,18 @@ namespace DateCreateRepair2
         return;
       }
 
-      // --- UI Zamknutí ---
       SetControlsEnabled(false);
       txtLog.Clear();
       progressBar.Value = 0;
 
-      // --- Příprava na hlášení stavu ---
-      // 'Progress<T>' zajistí, že hlášení z 'ImageProcessor'
-      // se vždy vykoná na UI vlákně.
       var progress = new Progress<ProgressReport>(report =>
       {
-        // Aktualizace logu
         if (!string.IsNullOrWhiteSpace(report.Message))
         {
-          // Přidáme text do logu s barvou
+          // TATO METODA JE NYNÍ AKTUALIZOVÁNA
           AppendLog(report.Message, report.GetColor());
         }
 
-        // Aktualizace ProgressBaru
         if (report.TotalProgress.HasValue)
         {
           progressBar.Maximum = report.TotalProgress.Value;
@@ -62,12 +52,10 @@ namespace DateCreateRepair2
         }
       });
 
-      // --- Spuštění logiky na pozadí ---
       try
       {
         var processor = new ImageProcessor(path);
 
-        // Spustíme těžkou práci na jiném vlákně, aby UI nezamrzlo
         await Task.Run(() => processor.ProcessFiles(progress));
 
         AppendLog("--- HOTOVO ---", Color.Blue);
@@ -78,13 +66,11 @@ namespace DateCreateRepair2
       }
       finally
       {
-        // --- UI Odemknutí ---
         SetControlsEnabled(true);
-        progressBar.Value = 0; // Vynulovat
+        progressBar.Value = 0;
       }
     }
 
-    // Pomocná metoda pro zamknutí/odemknutí UI
     private void SetControlsEnabled(bool enabled)
     {
       btnStart.Enabled = enabled;
@@ -92,24 +78,26 @@ namespace DateCreateRepair2
       txtPath.Enabled = enabled;
     }
 
-    // Pomocná metoda pro barevné logování
-    // Poznámka: Obyčejný TextBox nepodporuje barvy.
-    // Pro barvy nahraďte 'TextBox' za 'RichTextBox' a odkomentujte:
+    // ---------- UPRAVENÁ METODA ----------
+    // Tato metoda nyní plně využívá RichTextBox pro barevný výpis.
     private void AppendLog(string message, Color color)
     {
-      /*
-      // Pro RichTextBox
-      txtLog.SelectionStart = txtLog.TextLength;
-      txtLog.SelectionLength = 0;
-      txtLog.SelectionColor = color;
-      txtLog.AppendText(message + Environment.NewLine);
-      txtLog.SelectionColor = txtLog.ForeColor; // Vrátit barvu
-      */
-
-      // Pro obyčejný TextBox (bez barev)
-      txtLog.AppendText(message + Environment.NewLine);
-      txtLog.ScrollToCaret(); // Automatické rolování
+      // Zkontrolujeme, jestli operaci nevoláme z jiného vlákna
+      if (txtLog.InvokeRequired)
+      {
+        // Pokud ano, převoláme ji bezpečně na UI vlákno
+        txtLog.Invoke(new Action(() => AppendLog(message, color)));
+      }
+      else
+      {
+        // Toto je kód pro RichTextBox
+        txtLog.SelectionStart = txtLog.TextLength;
+        txtLog.SelectionLength = 0;
+        txtLog.SelectionColor = color; // Nastavíme barvu
+        txtLog.AppendText(message + Environment.NewLine);
+        txtLog.SelectionColor = txtLog.ForeColor; // Vrátíme barvu na výchozí
+        txtLog.ScrollToCaret(); // Automatické rolování
+      }
     }
-
   }
 }

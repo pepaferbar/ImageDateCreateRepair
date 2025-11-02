@@ -29,7 +29,7 @@ namespace DateCreateRepair2
         ReportType.Success => Color.Green,
         ReportType.Error => Color.Red,
         ReportType.Warning => Color.Orange,
-        ReportType.Detail => Color.Gray,
+        ReportType.Detail => Color.Black,
         _ => Color.Black,
       };
     }

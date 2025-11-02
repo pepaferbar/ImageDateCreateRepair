@@ -32,22 +32,22 @@
       btnBrowse = new Button();
       btnStart = new Button();
       progressBar = new ProgressBar();
-      txtLog = new TextBox();
       folderBrowserDialog = new FolderBrowserDialog();
+      txtLog = new RichTextBox();
       SuspendLayout();
       // 
       // txtPath
       // 
       txtPath.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-      txtPath.Location = new Point(34, 23);
+      txtPath.Location = new Point(12, 13);
       txtPath.Name = "txtPath";
-      txtPath.Size = new Size(603, 23);
+      txtPath.Size = new Size(653, 23);
       txtPath.TabIndex = 0;
       // 
       // btnBrowse
       // 
       btnBrowse.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnBrowse.Location = new Point(643, 23);
+      btnBrowse.Location = new Point(671, 13);
       btnBrowse.Name = "btnBrowse";
       btnBrowse.Size = new Size(75, 23);
       btnBrowse.TabIndex = 1;
@@ -58,7 +58,7 @@
       // btnStart
       // 
       btnStart.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-      btnStart.Location = new Point(724, 23);
+      btnStart.Location = new Point(752, 13);
       btnStart.Name = "btnStart";
       btnStart.Size = new Size(75, 23);
       btnStart.TabIndex = 2;
@@ -69,32 +69,35 @@
       // progressBar
       // 
       progressBar.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-      progressBar.Location = new Point(34, 52);
+      progressBar.Location = new Point(12, 42);
       progressBar.Name = "progressBar";
-      progressBar.Size = new Size(765, 23);
+      progressBar.Size = new Size(815, 23);
       progressBar.TabIndex = 3;
       // 
       // txtLog
       // 
       txtLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-      txtLog.Location = new Point(34, 81);
-      txtLog.Multiline = true;
+      txtLog.BackColor = Color.LightGray;
+      txtLog.BorderStyle = BorderStyle.FixedSingle;
+      txtLog.Location = new Point(12, 71);
       txtLog.Name = "txtLog";
       txtLog.ReadOnly = true;
-      txtLog.ScrollBars = ScrollBars.Vertical;
-      txtLog.Size = new Size(765, 381);
+      txtLog.ScrollBars = RichTextBoxScrollBars.Vertical;
+      txtLog.Size = new Size(815, 391);
       txtLog.TabIndex = 4;
+      txtLog.Text = "";
       // 
       // MainForm
       // 
       AutoScaleDimensions = new SizeF(7F, 15F);
       AutoScaleMode = AutoScaleMode.Font;
-      ClientSize = new Size(811, 474);
+      ClientSize = new Size(839, 474);
       Controls.Add(txtLog);
       Controls.Add(progressBar);
       Controls.Add(btnStart);
       Controls.Add(btnBrowse);
       Controls.Add(txtPath);
+      FormBorderStyle = FormBorderStyle.FixedSingle;
       Name = "MainForm";
       Text = "MainForm";
       ResumeLayout(false);
@@ -107,7 +110,7 @@
     private Button btnBrowse;
     private Button btnStart;
     private ProgressBar progressBar;
-    private TextBox txtLog;
     private FolderBrowserDialog folderBrowserDialog;
+    private RichTextBox txtLog;
   }
 }
