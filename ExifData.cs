@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Upravený obsah souboru ExifData.cs
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,57 +8,51 @@ using System.Threading.Tasks;
 using MetadataExtractor;
 using MetadataExtractor.Formats.Exif;
 
-namespace ConsoleApp1
+// Sjednocený namespace
+namespace DateCreateRepair2
 {
   internal class ExifData
   {
-
     internal bool DateTaken(string imagepath, ref DateTime newDate)
     {
       try
       {
-        // 1. Načte všechny metadata z obrázku (funguje pro HEIC, JPEG, PNG...)
+        // 1. Načte všechny metadata z obrázku
         var directories = ImageMetadataReader.ReadMetadata(imagepath);
 
-        // 2. Najde EXIF adresář, kde je obvykle uložen datum pořízení.
-        //    Váš kód používal ID 36867, což je 'DateTimeOriginal'.
+        // 2. Najde EXIF adresář (DateTimeOriginal)
         var subIfdDirectory = directories.OfType<ExifSubIfdDirectory>().FirstOrDefault();
 
         if (subIfdDirectory != null &&
             subIfdDirectory.TryGetDateTime(ExifDirectoryBase.TagDateTimeOriginal, out newDate))
         {
-          // Úspěšně nalezeno a převedeno datum pořízení.
-          return true;
+          return true; // Úspěšně nalezeno
         }
 
-        // 3. Záložní řešení: Někdy je datum v hlavním IFD0 adresáři
+        // 3. Záložní řešení: IFD0 adresář (DateTimeOriginal)
         var ifd0Directory = directories.OfType<ExifIfd0Directory>().FirstOrDefault();
         if (ifd0Directory != null &&
             ifd0Directory.TryGetDateTime(ExifDirectoryBase.TagDateTimeOriginal, out newDate))
         {
-          // Úspěšně nalezeno i zde.
-          return true;
+          return true; // Úspěšně nalezeno i zde
         }
 
-        // 4. Poslední pokus: Zkusíme tag 'DateTime' (ID 306), 
-        //    což je často datum poslední modifikace.
+        // 4. Poslední pokus: tag 'DateTime' (datum modifikace)
         if (ifd0Directory != null &&
             ifd0Directory.TryGetDateTime(ExifDirectoryBase.TagDateTime, out newDate))
         {
-          // Nalezeno alespoň datum modifikace.
-          return true;
+          return true; // Nalezeno alespoň datum modifikace
         }
 
-        // Pokud jsme se dostali až sem, datum nebylo v metadatech nalezeno.
+        // Datum nenalezeno
         return false;
       }
-      catch (Exception ex)
+      catch (Exception)
       {
-        Console.WriteLine(ex.Message);
-        // Zachytí jakoukoliv chybu při čtení souboru nebo parsování metadat
+        // Chyba bude zachycena a zalogována o úroveň výš (v ImageProcessor)
+        // Původní: Console.WriteLine(ex.Message);
         return false;
       }
     }
-
   }
 }
