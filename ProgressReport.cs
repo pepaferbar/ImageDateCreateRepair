@@ -14,11 +14,8 @@ namespace DateCreateRepair2
 
   public class ProgressReport
   {
-    // PŘIŘAZENA VÝCHOZÍ HODNOTA pro opravu varování CS8618
     public string Message { get; set; } = string.Empty;
-
     public ReportType Type { get; set; } = ReportType.Info;
-
     public int? CurrentProgress { get; set; }
     public int? TotalProgress { get; set; }
 
@@ -28,8 +25,13 @@ namespace DateCreateRepair2
       {
         ReportType.Success => Color.Green,
         ReportType.Error => Color.Red,
-        ReportType.Warning => Color.Orange,
-        ReportType.Detail => Color.Black,
+
+        // UPRAVENO: Oranžová nahrazena tmavší zlatou pro lepší čitelnost
+        ReportType.Warning => Color.DarkGoldenrod,
+
+        // UPRAVENO: Změněno na šedou pro odlišení od Info
+        ReportType.Detail => Color.Gray,
+
         _ => Color.Black,
       };
     }

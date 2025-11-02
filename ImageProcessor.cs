@@ -10,14 +10,9 @@ namespace DateCreateRepair2
 {
   public class ImageProcessor
   {
-    // Odebrána všechna počítadla (count, countTrue, atd.)
-    // Odebrán _logLock
-
     private readonly string _path;
     private readonly string _heicPath;
     private readonly string _notsupportPath;
-
-    // Objekt, kterému budeme hlásit stav (může to být formulář, konzole, cokoliv)
     private IProgress<ProgressReport>? _progress;
 
     public ImageProcessor(string path)
@@ -27,16 +22,17 @@ namespace DateCreateRepair2
       _notsupportPath = Path.Combine(_path, "_notsupport");
     }
 
-    // Hlavní metoda nyní přijímá IProgress a je asynchronní
-    // (Používáme Task.Run ve formuláři, takže async zde není nutný, ale je to dobrá praxe)
     public void ProcessFiles(IProgress<ProgressReport> progress)
     {
       _progress = progress;
 
-      // Počítadla jsou nyní lokální a jejich souhrn se pošle na konci
-      int countTrue = 0;
-      int countFalse = 0;
-      int countSkipped = 0;
+      // Rozšířená počítadla pro detailní souhrn
+      int countDateUpdated = 0;     // (countTrue)
+      int countDateError = 0;     // (countFalse)
+      int countUnsupportedMoved = 0;  // (countSkipped)
+      int countHeicConverted = 0;
+      int countHeicFailed = 0;
+      int countSameDate = 0;
 
       EnsureDirectoryExists(_heicPath);
       EnsureDirectoryExists(_notsupportPath);
@@ -75,11 +71,13 @@ namespace DateCreateRepair2
           if (File.Exists(jpgCesta))
           {
             Report(ReportType.Warning, $"JPG již existuje, konverze přeskočena: {fName}");
+            Interlocked.Increment(ref countHeicConverted); // Počítáme jako úspěch
           }
           else
           {
             heicConverter.ConvertHeicToJpg(filename, jpgCesta, 95);
             Report(ReportType.Success, $"Převedeno na JPG: {fName}");
+            Interlocked.Increment(ref countHeicConverted);
           }
 
           if (File.Exists(filename))
@@ -98,6 +96,7 @@ namespace DateCreateRepair2
         catch (Exception ex)
         {
           Report(ReportType.Error, $"Chyba při převodu HEIC {fName}: {ex.Message}");
+          Interlocked.Increment(ref countHeicFailed); // Přidáno počítadlo chyb
         }
       });
 
@@ -126,7 +125,6 @@ namespace DateCreateRepair2
         string fName = Path.GetFileName(filename);
         int currentCount = Interlocked.Increment(ref countDateProcessed);
 
-        // Hlášení pokroku pro ProgressBar
         Report(ReportType.Info, "", currentCount, dateJobTotal);
 
         try
@@ -136,23 +134,24 @@ namespace DateCreateRepair2
             if (newDate != default(DateTime) && newDate != File.GetLastWriteTime(filename))
             {
               File.SetLastWriteTime(filename, newDate);
-              Interlocked.Increment(ref countTrue);
+              Interlocked.Increment(ref countDateUpdated);
               Report(ReportType.Success, $"Aktualizováno datum: {fName} -> {newDate}");
             }
             else
             {
+              Interlocked.Increment(ref countSameDate); // Přidáno počítadlo
               Report(ReportType.Detail, $"Datum je již správné: {fName}");
             }
           }
           else
           {
-            Interlocked.Increment(ref countFalse);
+            Interlocked.Increment(ref countDateError);
             Report(ReportType.Warning, $"EXIF datum nenalezeno: {fName}");
           }
         }
         catch (Exception ex)
         {
-          Interlocked.Increment(ref countFalse);
+          Interlocked.Increment(ref countDateError);
           Report(ReportType.Error, $"Chyba při čtení/zápisu data {fName}: {ex.Message}");
         }
       });
@@ -161,7 +160,7 @@ namespace DateCreateRepair2
       Report(ReportType.Info, "Fáze 3: Přesun nepodporovaných souborů...");
       var supportedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".heic" };
       var unsupportedFiles = allFiles.Where(f =>
-          File.Exists(f) && // Zkontrolujeme, zda ještě existuje
+          File.Exists(f) &&
           !supportedExtensions.Contains(Path.GetExtension(f)))
           .ToList();
 
@@ -179,7 +178,7 @@ namespace DateCreateRepair2
           else
           {
             File.Move(filename, destPath);
-            Interlocked.Increment(ref countSkipped);
+            Interlocked.Increment(ref countUnsupportedMoved);
             Report(ReportType.Detail, $"Přesunuto (nepodporováno): {fName}");
           }
         }
@@ -189,11 +188,24 @@ namespace DateCreateRepair2
         }
       });
 
-      // --- Rekapitulace ---
-      Report(ReportType.Info, "--- Zpracování dokončeno ---");
-      Report(ReportType.Info, $"Aktualizováno: {countTrue}");
-      Report(ReportType.Warning, $"Datum nenalezeno / Chyba: {countFalse}");
-      Report(ReportType.Detail, $"Přesunuto (nepodporováno): {countSkipped}");
+      // --- Rekapitulace (UPRAVENO) ---
+      Report(ReportType.Info, "------------------------------------------------------");
+      Report(ReportType.Info, "--- ZPRACOVÁNÍ DOKONČENO ---");
+      Report(ReportType.Info, "------------------------------------------------------");
+
+      Report(ReportType.Info, $"Celkem souborů v adresáři: {countTotal}");
+
+      Report(ReportType.Info, $"\n--- Zpracování HEIC ({heicFiles.Count} nalezeno) ---");
+      Report(ReportType.Success, $"Úspěšně převedeno/přeskočeno: {countHeicConverted}");
+      Report(ReportType.Error, $"Chyba konverze: {countHeicFailed}");
+
+      Report(ReportType.Info, $"\n--- Zpracování JPG/JPEG ({dateJobTotal} nalezeno) ---");
+      Report(ReportType.Success, $"Datum aktualizováno: {countDateUpdated}");
+      Report(ReportType.Detail, $"Datum již bylo správné: {countSameDate}");
+      Report(ReportType.Warning, $"Datum nenalezeno / Chyba čtení: {countDateError}");
+
+      Report(ReportType.Info, $"\n--- Ostatní soubory ---");
+      Report(ReportType.Detail, $"Přesunuto (nepodporováno): {countUnsupportedMoved}");
     }
 
     private void EnsureDirectoryExists(string path)
@@ -212,7 +224,6 @@ namespace DateCreateRepair2
       }
     }
 
-    // Jediná metoda pro hlášení stavu
     private void Report(ReportType type, string message, int? current = null, int? total = null)
     {
       _progress?.Report(new ProgressReport
