@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.IO;
 using System.Threading.Tasks;
@@ -44,19 +44,30 @@ namespace DateCreateRepair2
 
         if (report.TotalProgress.HasValue)
         {
-          progressBar.Maximum = report.TotalProgress.Value;
+          if (progressBar.Maximum != report.TotalProgress.Value)
+          {
+            progressBar.Value = 0; // Resetujeme při změně rozsahu
+            progressBar.Maximum = report.TotalProgress.Value;
+          }
         }
         if (report.CurrentProgress.HasValue)
         {
-          progressBar.Value = report.CurrentProgress.Value;
+          // Zajistíme, aby hodnota nepřesáhla maximum (ochrana před race condition)
+          int val = report.CurrentProgress.Value;
+          if (val >= 0 && val <= progressBar.Maximum)
+          {
+            progressBar.Value = val;
+          }
         }
       });
 
       try
       {
         var processor = new ImageProcessor(path);
+        bool convertHeic = chkConvertHeic.Checked;
+        bool fixHeicDate = chkFixHeicDate.Checked;
 
-        await Task.Run(() => processor.ProcessFiles(progress));
+        await Task.Run(() => processor.ProcessFiles(progress, convertHeic, fixHeicDate));
 
         AppendLog("--- HOTOVO ---", Color.Blue);
       }

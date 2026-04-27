@@ -1,4 +1,4 @@
-﻿using DateCreateRepair2;
+using DateCreateRepair2;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,7 +22,7 @@ namespace DateCreateRepair2
       _notsupportPath = Path.Combine(_path, "_notsupport");
     }
 
-    public void ProcessFiles(IProgress<ProgressReport> progress)
+    public void ProcessFiles(IProgress<ProgressReport> progress, bool convertHeic, bool fixHeicDate)
     {
       _progress = progress;
 
@@ -33,6 +33,7 @@ namespace DateCreateRepair2
       int countHeicConverted = 0;
       int countHeicFailed = 0;
       int countSameDate = 0;
+      int countHeicDateFixed = 0;
 
       EnsureDirectoryExists(_heicPath);
       EnsureDirectoryExists(_notsupportPath);
@@ -55,50 +56,92 @@ namespace DateCreateRepair2
       HeicConverter heicConverter = new HeicConverter();
 
       // --- FÁZE 1: Konverze HEIC ---
-      Report(ReportType.Info, "Fáze 1: Konverze HEIC souborů...");
       var heicFiles = allFiles.Where(f =>
           System.IO.Path.GetExtension(f).Equals(".heic", StringComparison.OrdinalIgnoreCase))
           .ToList();
 
-      Parallel.ForEach(heicFiles, filename =>
+      if (heicFiles.Count > 0 && (convertHeic || fixHeicDate))
       {
-        string fName = Path.GetFileName(filename);
-        string jpgCesta = Path.ChangeExtension(filename, ".jpg");
-        string heicDestPath = Path.Combine(_heicPath, fName);
+        string phaseMsg = convertHeic ? "Konverze a oprava HEIC" : "Oprava datumu HEIC";
+        Report(ReportType.Info, $"Fáze 1: {phaseMsg} souborů ({heicFiles.Count})...");
+        int countHeicProcessed = 0;
+        int heicTotal = heicFiles.Count;
 
-        try
-        {
-          if (File.Exists(jpgCesta))
-          {
-            Report(ReportType.Warning, $"JPG již existuje, konverze přeskočena: {fName}");
-            Interlocked.Increment(ref countHeicConverted); // Počítáme jako úspěch
-          }
-          else
-          {
-            heicConverter.ConvertHeicToJpg(filename, jpgCesta, 95);
-            Report(ReportType.Success, $"Převedeno na JPG: {fName}");
-            Interlocked.Increment(ref countHeicConverted);
-          }
+        // Reset progress baru pro tuto fázi
+        Report(ReportType.Info, "", 0, heicTotal);
 
-          if (File.Exists(filename))
+        Parallel.ForEach(heicFiles, filename =>
+        {
+          string fName = Path.GetFileName(filename);
+          string jpgCesta = Path.ChangeExtension(filename, ".jpg");
+          string heicDestPath = Path.Combine(_heicPath, fName);
+          int currentCount = Interlocked.Increment(ref countHeicProcessed);
+
+          // Pokusíme se získat datum pro informativní výpis
+          DateTime fileDate = default;
+          bool hasDate = exifData.DateTaken(filename, ref fileDate);
+          string dateInfo = hasDate ? $" [{fileDate:dd.MM.yyyy HH:mm}]" : "";
+
+          Report(ReportType.Info, "", currentCount, heicTotal);
+
+          try
           {
-            if (File.Exists(heicDestPath))
+            // 1. OPRAVA DATUMU HEIC (pokud je zapnuto)
+            if (fixHeicDate && hasDate)
             {
-              Report(ReportType.Warning, $"HEIC soubor v cíli ({_heicPath}) již existuje: {fName}");
+              if (fileDate != File.GetLastWriteTime(filename))
+              {
+                File.SetLastWriteTime(filename, fileDate);
+                Interlocked.Increment(ref countHeicDateFixed);
+                Report(ReportType.Success, $"Opraven datum HEIC: {fName}{dateInfo}");
+              }
             }
-            else
+
+            // 2. KONVERZE (pokud je zapnuto)
+            if (convertHeic)
             {
-              File.Move(filename, heicDestPath);
-              Report(ReportType.Detail, $"Přesunut HEIC originál: {fName}");
+              if (File.Exists(jpgCesta))
+              {
+                Report(ReportType.Warning, $"JPG již existuje, konverze přeskočena: {fName}{dateInfo}");
+                Interlocked.Increment(ref countHeicConverted);
+              }
+              else
+              {
+                heicConverter.ConvertHeicToJpg(filename, jpgCesta, 95);
+                Report(ReportType.Success, $"Převedeno na JPG: {fName}{dateInfo}");
+                Interlocked.Increment(ref countHeicConverted);
+              }
+
+              // PŘESUN ORIGINÁLU (pouze při konverzi)
+              if (File.Exists(filename))
+              {
+                if (File.Exists(heicDestPath))
+                {
+                  Report(ReportType.Warning, $"HEIC soubor v cíli ({_heicPath}) již existuje: {fName}");
+                }
+                else
+                {
+                  File.Move(filename, heicDestPath);
+                  Report(ReportType.Detail, $"Přesunut HEIC originál: {fName}");
+                }
+              }
             }
           }
-        }
-        catch (Exception ex)
-        {
-          Report(ReportType.Error, $"Chyba při převodu HEIC {fName}: {ex.Message}");
-          Interlocked.Increment(ref countHeicFailed); // Přidáno počítadlo chyb
-        }
-      });
+          catch (Exception ex)
+          {
+            Report(ReportType.Error, $"Chyba při zpracování HEIC {fName}: {ex.Message}");
+            Interlocked.Increment(ref countHeicFailed);
+          }
+        });
+      }
+      else if (heicFiles.Count > 0)
+      {
+        Report(ReportType.Warning, "Fáze 1: Zpracování HEIC souborů bylo vypnuto uživatelem.");
+      }
+      else
+      {
+        Report(ReportType.Info, "Fáze 1: Žádné HEIC soubory k převodu.");
+      }
 
       // --- FÁZE 2: Oprava data ---
       Report(ReportType.Info, "Fáze 2: Oprava EXIF dat...");
@@ -118,6 +161,9 @@ namespace DateCreateRepair2
 
       int dateJobTotal = filesForDateFix.Length;
       int countDateProcessed = 0;
+
+      // Reset progress baru pro tuto fázi
+      Report(ReportType.Info, "", 0, dateJobTotal);
 
       Parallel.ForEach(filesForDateFix, filename =>
       {
@@ -164,10 +210,19 @@ namespace DateCreateRepair2
           !supportedExtensions.Contains(Path.GetExtension(f)))
           .ToList();
 
+      int unsupportedTotal = unsupportedFiles.Count;
+      int countUnsupportedProcessed = 0;
+
+      // Reset progress baru pro tuto fázi
+      Report(ReportType.Info, "", 0, unsupportedTotal);
+
       Parallel.ForEach(unsupportedFiles, filename =>
       {
         string fName = Path.GetFileName(filename);
         string destPath = Path.Combine(_notsupportPath, fName);
+        int currentCount = Interlocked.Increment(ref countUnsupportedProcessed);
+
+        Report(ReportType.Info, "", currentCount, unsupportedTotal);
 
         try
         {
@@ -195,9 +250,24 @@ namespace DateCreateRepair2
 
       Report(ReportType.Info, $"Celkem souborů v adresáři: {countTotal}");
 
-      Report(ReportType.Info, $"\n--- Zpracování HEIC ({heicFiles.Count} nalezeno) ---");
-      Report(ReportType.Success, $"Úspěšně převedeno/přeskočeno: {countHeicConverted}");
-      Report(ReportType.Error, $"Chyba konverze: {countHeicFailed}");
+      if (convertHeic || fixHeicDate)
+      {
+        Report(ReportType.Info, $"\n--- Zpracování HEIC ({heicFiles.Count} nalezeno) ---");
+        if (convertHeic)
+        {
+          Report(ReportType.Success, $"Úspěšně převedeno/přeskočeno: {countHeicConverted}");
+          Report(ReportType.Error, $"Chyba konverze: {countHeicFailed}");
+        }
+        if (fixHeicDate)
+        {
+          Report(ReportType.Success, $"Datum opraveno u HEIC originálů: {countHeicDateFixed}");
+        }
+      }
+      else
+      {
+        Report(ReportType.Warning, $"\n--- Zpracování HEIC (VYPNUTO) ---");
+        Report(ReportType.Detail, $"Nalezeno {heicFiles.Count} souborů, které byly přeskočeny.");
+      }
 
       Report(ReportType.Info, $"\n--- Zpracování JPG/JPEG ({dateJobTotal} nalezeno) ---");
       Report(ReportType.Success, $"Datum aktualizováno: {countDateUpdated}");
