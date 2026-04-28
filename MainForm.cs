@@ -8,6 +8,8 @@ namespace DateCreateRepair2
 {
   public partial class MainForm : Form
   {
+    private const int MaxLogLines = 3000;
+
     public MainForm()
     {
       InitializeComponent();
@@ -101,6 +103,9 @@ namespace DateCreateRepair2
       }
       else
       {
+        // Udržuje počet řádků logu pod limitem kvůli výkonu/paměti.
+        TrimLogLinesIfNeeded();
+
         // Toto je kód pro RichTextBox
         txtLog.SelectionStart = txtLog.TextLength;
         txtLog.SelectionLength = 0;
@@ -108,6 +113,37 @@ namespace DateCreateRepair2
         txtLog.AppendText(message + Environment.NewLine);
         txtLog.SelectionColor = txtLog.ForeColor; // Vrátíme barvu na výchozí
         txtLog.ScrollToCaret(); // Automatické rolování
+      }
+    }
+
+    private void TrimLogLinesIfNeeded()
+    {
+      int linesToRemove = txtLog.Lines.Length - MaxLogLines + 1;
+      if (linesToRemove <= 0)
+      {
+        return;
+      }
+
+      int removeChars = 0;
+      int removedLines = 0;
+
+      while (removedLines < linesToRemove && removeChars < txtLog.TextLength)
+      {
+        int nextNewLine = txtLog.Text.IndexOf(Environment.NewLine, removeChars, StringComparison.Ordinal);
+        if (nextNewLine < 0)
+        {
+          removeChars = txtLog.TextLength;
+          break;
+        }
+
+        removeChars = nextNewLine + Environment.NewLine.Length;
+        removedLines++;
+      }
+
+      if (removeChars > 0)
+      {
+        txtLog.Select(0, removeChars);
+        txtLog.SelectedText = string.Empty;
       }
     }
   }
