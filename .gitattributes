@@ -1,0 +1,11 @@
+# Normalizace konců řádků
+* text=auto
+
+# Soubory Visual Studia vždy s CRLF
+*.sln     text eol=crlf
+*.csproj  text eol=crlf
+
+# Binární soubory
+*.ico     binary
+*.png     binary
+*.jpg     binary

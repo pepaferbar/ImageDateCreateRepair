@@ -13,6 +13,8 @@ namespace DateCreateRepair2
     public MainForm()
     {
       InitializeComponent();
+      // Ikona okna převzatá z exe (ApplicationIcon v csproj)
+      Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
     }
 
     private void btnBrowse_Click(object sender, EventArgs e)

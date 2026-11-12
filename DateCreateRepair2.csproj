@@ -2,13 +2,32 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    
     <TargetFramework>net8.0-windows</TargetFramework>
-    
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <PublishSingleFile>true</PublishSingleFile> 
+
+    <!-- Identita aplikace (název exe sjednocen s repem, namespace zůstává) -->
+    <AssemblyName>ImageDateCreateRepair</AssemblyName>
+    <RootNamespace>DateCreateRepair2</RootNamespace>
+    <Product>ImageDateCreateRepair</Product>
+    <AssemblyTitle>Image Date Create Repair</AssemblyTitle>
+    <Version>1.0.0</Version>
+    <Authors>pepaferbar</Authors>
+    <Description>Oprava data souborů fotek podle EXIF (JPG, HEIC)</Description>
+    <Copyright>© 2026 pepaferbar</Copyright>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+
+    <!-- Publikace: jeden exe, vyžaduje nainstalovaný .NET 8 Desktop Runtime -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <!-- V Release bez samostatného .pdb vedle exe -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
   <ItemGroup>

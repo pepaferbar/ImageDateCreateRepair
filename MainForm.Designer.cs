@@ -127,7 +127,7 @@ namespace DateCreateRepair2
       Controls.Add(txtPath);
       FormBorderStyle = FormBorderStyle.FixedSingle;
       Name = "MainForm";
-      Text = "Image Date Create Repair";
+      Text = "Image DataCreate Repair";
       ResumeLayout(false);
       PerformLayout();
     }
