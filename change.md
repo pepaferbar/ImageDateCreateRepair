@@ -1,3 +1,8 @@
+# Změny - 2026-11-13 (architektura)
+- **Cíl:** Aktualizace popisu architektury skillem `/architektura`.
+- **Soubory:**
+  - CLAUDE.md: vytvořen – fáze zpracování, knihovny, build/publish, upozornění, že se mění datum změny (ne vytvoření).
+
 # Změny - 12.11.2026
 - **Cíl:** Konfigurace repa – identita a publikace exe, ikona, české README, licence a formátování.
 - **Soubory:**
